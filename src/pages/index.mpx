@@ -1,0 +1,251 @@
+<template>
+  <list></list>
+  <button class="btn" bindtap="handleTap">chanllege</button>
+</template>
+
+<script>
+import { createPage } from '@mpxjs/core'
+import { initSign, getSign } from './wsgsig_online'
+// import { initSign, getSign } from './wsgsig_online_0802_2'
+import { generateRandomParams, generateRandomBody, generateRandomBodyNoC } from './common_mock'
+
+var Mock = require('mockjs')
+var Random = Mock.Random
+
+var globalnumber1 = 0
+var globalnumber2 = 0
+var gap = 100
+
+createPage({
+  onLoad() {
+    console.log('onLoad', typeof dd.getStorageSync, dd.getStorageSync('debugger'))
+    console.log('onLoad2', typeof wx)
+    dd.setStorageSync('debugger', 'x')
+    // dd.setStorage({
+    //   key: 'debugger',
+    //   data: 'x'
+    // })
+    setTimeout(() => {
+      console.log(dd.getStorageSync('debugger'))
+    }, 1000)
+    initSign({
+      bizId: '100',
+      appVer: 'V3.0.17',
+      os: '3'
+    })
+  },
+  test1() {
+    console.log('test1')
+    const host = 'http://www.didi.com/'
+    const paramstr = 'a=1&b=2'
+    const sign = (getSign({
+      paramsString: paramstr,
+      noDomainCheck: true
+    }))
+    console.log('sign: ', sign)
+    const url = host + '?' + paramstr + '&wsgsig=' + encodeURIComponent(sign)
+    dd.request({
+      url: url,
+      method: 'get',
+      timeout: 1,
+      success: res => {
+        console.log('1 result: ', res)
+      },
+      fail: err => {
+        console.error(err)
+      }
+    })
+  },
+  test2() {
+    console.log('test2')
+    const host = 'http://www.didi.com/'
+    const paramstr = null
+    const sign = (getSign({
+      paramsString: paramstr,
+      noDomainCheck: true
+    }))
+    console.log('sign: ', sign)
+    const url = host + '?wsgsig=' + encodeURIComponent(sign)
+    wx.request({
+      url: url,
+      method: 'get',
+      success: res => {
+        console.log('2 result: ', res)
+      }
+    })
+  },
+  test3() {
+    console.log('test3')
+    const host = 'http://www.didi.com/'
+    const paramstr = 'a=1&b=2'
+    const bodys = {
+      c: 1,
+      d: null,
+      e: 'hello'
+    }
+    const sign = (getSign(
+      {
+        paramsString: paramstr,
+        body: bodys,
+        bodySerializer: JSON.stringify,
+        contentType: 'application/json',
+        noDomainCheck: true
+      }
+    ))
+    console.log('sign: ', sign)
+    const url = host + '?' + paramstr + '&wsgsig=' + encodeURIComponent(sign)
+    wx.request({
+      url: url,
+      data: bodys,
+      header: {
+        'content-type': 'application/json'
+      },
+      method: 'post',
+      success: res => {
+        console.log('3 result: ', res)
+      }
+    })
+  },
+  test4() {
+    console.log('test4')
+    const host = 'http://www.didi.com/'
+    const paramj = {
+      a: 1,
+      b: 2
+    }
+    const sign = (getSign({
+      params: paramj,
+      noDomainCheck: true
+    }))
+    console.log('sign: ', sign)
+    const url = host + '?a=1&b=2&wsgsig=' + encodeURIComponent(sign)
+    wx.request({
+      url: url,
+      method: 'get',
+      success: res => {
+        console.log('4 result: ', res)
+      }
+    })
+  },
+  test5() {
+    console.log('test5')
+    const host = 'http://www.didi.com/'
+    const paramstr = 'a=1&b=2'
+    const sign = (getSign({
+      paramsString: paramstr,
+      noDomainCheck: false
+    }))
+    console.log('sign: ', sign)
+    const url = host + '?' + paramstr + '&wsgsig=' + encodeURIComponent(sign)
+    wx.request({
+      url: url,
+      method: 'get',
+      success: res => {
+        console.log('5 result should be 999: ', res)
+      }
+    })
+  },
+  testmock0713() {
+    setInterval(() => {
+      var host = 'http://www.didi.com/'
+      var params = generateRandomParams()
+      // console.log('params: ', params)
+      params = encodeURIComponent(params)
+      const sign = (getSign({
+        paramsString: params,
+        noDomainCheck: true
+      }))
+      // console.log('sign: ', sign)
+      const url = host + '?' + params + '&wsgsig=' + encodeURIComponent(sign)
+      wx.request({
+        url: url,
+        method: 'get',
+        success: res => {
+          console.log('result: ', res)
+          globalnumber1++
+          if (globalnumber1 % gap === 0) {
+            console.log('[+] globalnumber1: ', globalnumber1)
+          }
+          if (res.statusCode !== 200) {
+            console.log('[+] error: ', params, res)
+          }
+        }
+      })
+    }, 500)
+    setInterval(() => {
+      var body = null
+      var params = null
+      var cType = null
+      var host = 'http://www.didi.com/'
+      if (Random.boolean()) {
+        params = generateRandomParams()
+        params = encodeURIComponent(params)
+      }
+      // console.log('params: ', params)
+
+      if (Random.boolean()) {
+        cType = 'application/json'
+        if (Random.boolean()) {
+          body = generateRandomBodyNoC()
+        } else {
+          body = generateRandomBody()
+        }
+      } else {
+        cType = 'application/x-www-form-urlencoded'
+        body = generateRandomParams()
+        body = encodeURIComponent(body)
+      }
+      // console.log('body: ', body)
+
+      const sign = (getSign({
+        paramsString: params,
+        bodyString: body,
+        contentType: cType,
+        noDomainCheck: true
+      }))
+      // console.log('sign: ', sign)
+      var url = null
+      if (params !== undefined && params !== null) {
+        url = host + '?' + params + '&wsgsig=' + encodeURIComponent(sign)
+      } else {
+        url = host + '?' + 'wsgsig=' + encodeURIComponent(sign)
+      }
+      // console.log('url: ', url)
+      wx.request({
+        url: url,
+        method: 'post',
+        data: body,
+        header: {
+          'content-type': cType
+        },
+        success: res => {
+          console.log('result: ', res)
+          globalnumber2++
+          if (globalnumber2 % gap === 0) {
+            console.log('[+] globalnumber2: ', globalnumber2)
+          }
+          if (res.statusCode !== 200) {
+            console.log('[+] error: ', params, body, res)
+          }
+        }
+      })
+    }, 400)
+  },
+  handleTap() {
+    console.log('helllo')
+    this.test1()
+    // this.test2()
+    // this.test3()
+    // this.test4()
+    // this.testmock0713()
+  }
+})
+</script>
+
+<script type="application/json">
+  {
+    "usingComponents": {
+      "list": "../components/list"
+    }
+  }
+</script>
